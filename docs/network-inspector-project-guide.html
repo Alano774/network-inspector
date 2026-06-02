@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>企业局域网网络巡检与故障诊断工具 - 项目解析文档</title>
+  <style>
+    :root {
+      --bg: #f6f3ec;
+      --paper: rgba(255, 252, 246, 0.94);
+      --ink: #212121;
+      --muted: #616161;
+      --line: rgba(33, 33, 33, 0.12);
+      --accent: #0f6b62;
+      --accent-soft: rgba(15, 107, 98, 0.12);
+      --warm: #b36a1c;
+      --danger: #a63f3f;
+      --shadow: 0 18px 40px rgba(59, 48, 35, 0.10);
+      --radius: 24px;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: var(--sans);
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(179, 106, 28, 0.10), transparent 28%),
+        radial-gradient(circle at top right, rgba(15, 107, 98, 0.12), transparent 24%),
+        linear-gradient(180deg, #f8f5ef 0%, var(--bg) 100%);
+      line-height: 1.7;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 28px;
+      width: min(1440px, calc(100% - 48px));
+      margin: 0 auto;
+      padding: 28px 0 48px;
+    }
+
+    .sidebar {
+      position: sticky;
+      top: 20px;
+      align-self: start;
+      padding: 22px 20px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--line);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(14px);
+    }
+
+    .brand {
+      padding-bottom: 18px;
+      margin-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand h1 {
+      margin: 0 0 8px;
+      font-size: 1.28rem;
+      line-height: 1.3;
+    }
+
+    .brand p,
+    .side-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.94rem;
+    }
+
+    .toc {
+      display: grid;
+      gap: 10px;
+      margin-top: 18px;
+    }
+
+    .toc a {
+      text-decoration: none;
+      color: var(--ink);
+      padding: 10px 12px;
+      border-radius: 14px;
+      transition: 0.2s ease;
+      font-size: 0.96rem;
+    }
+
+    .toc a:hover {
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
+
+    .content {
+      display: grid;
+      gap: 22px;
+    }
+
+    .hero,
+    .section {
+      background: var(--paper);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      border-radius: 32px;
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .hero {
+      padding: 34px 34px 30px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(15, 107, 98, 0.08), transparent 35%),
+        linear-gradient(315deg, rgba(179, 106, 28, 0.09), transparent 40%);
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid var(--line);
+      color: var(--accent);
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .hero h2 {
+      margin: 16px 0 10px;
+      font-size: clamp(2rem, 4vw, 3.3rem);
+      line-height: 1.1;
+      letter-spacing: -0.03em;
+    }
+
+    .hero p {
+      margin: 0;
+      max-width: 920px;
+      color: #404040;
+      font-size: 1.02rem;
+    }
+
+    .chips,
+    .grid-2,
+    .grid-3,
+    .flow {
+      display: grid;
+      gap: 14px;
+    }
+
+    .chips {
+      margin-top: 22px;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    }
+
+    .chip,
+    .card,
+    .flow-step,
+    .metric {
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 16px;
+    }
+
+    .chip strong,
+    .card strong,
+    .flow-step strong,
+    .metric strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.96rem;
+    }
+
+    .chip span,
+    .card p,
+    .flow-step p,
+    .metric span {
+      color: var(--muted);
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    .section h3 {
+      margin: 0 0 16px;
+      font-size: 1.55rem;
+      line-height: 1.2;
+    }
+
+    .section h4 {
+      margin: 22px 0 10px;
+      font-size: 1.08rem;
+    }
+
+    .grid-2 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .grid-3 {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .flow {
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      margin-top: 14px;
+    }
+
+    .flow-step {
+      position: relative;
+      min-height: 150px;
+    }
+
+    .flow-step .index {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .callout {
+      border-left: 4px solid var(--accent);
+      background: rgba(15, 107, 98, 0.08);
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-top: 14px;
+    }
+
+    .callout.warn {
+      border-left-color: var(--warm);
+      background: rgba(179, 106, 28, 0.10);
+    }
+
+    .callout.danger {
+      border-left-color: var(--danger);
+      background: rgba(166, 63, 63, 0.10);
+    }
+
+    .callout p {
+      margin: 0;
+    }
+
+    ul,
+    ol {
+      margin: 10px 0 0 18px;
+      padding: 0;
+    }
+
+    li + li {
+      margin-top: 8px;
+    }
+
+    code,
+    pre {
+      font-family: var(--mono);
+    }
+
+    code {
+      background: rgba(33, 33, 33, 0.06);
+      padding: 2px 6px;
+      border-radius: 8px;
+      font-size: 0.93em;
+    }
+
+    pre {
+      margin: 12px 0 0;
+      padding: 16px 18px;
+      overflow: auto;
+      border-radius: 18px;
+      background: #1f2328;
+      color: #f3f4f6;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 0.92rem;
+      line-height: 1.6;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 14px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: rgba(255, 255, 255, 0.82);
+      border: 1px solid var(--line);
+    }
+
+    th,
+    td {
+      padding: 12px 14px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid rgba(33, 33, 33, 0.08);
+      font-size: 0.94rem;
+    }
+
+    th {
+      background: rgba(15, 107, 98, 0.08);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(15, 107, 98, 0.12);
+      color: var(--accent);
+      font-size: 0.84rem;
+      font-weight: 700;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    .footer {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 1080px) {
+      .layout {
+        grid-template-columns: 1fr;
+        width: min(100% - 24px, 1200px);
+      }
+
+      .sidebar {
+        position: static;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .hero,
+      .section,
+      .sidebar {
+        border-radius: 24px;
+        padding: 20px;
+      }
+
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <h1>项目解析导航</h1>
+        <p>企业局域网网络巡检与故障诊断工具</p>
+      </div>
+      <nav class="toc">
+        <a href="#background">项目背景</a>
+        <a href="#what">项目做什么</a>
+        <a href="#entry">核心入口</a>
+        <a href="#architecture">整体架构</a>
+        <a href="#modules">模块拆解</a>
+        <a href="#flow">一次扫描的完整链路</a>
+        <a href="#rules">多信号判定与诊断规则</a>
+        <a href="#batch">批量巡检与模板</a>
+        <a href="#report">报告与存储策略</a>
+        <a href="#stack">技术栈</a>
+        <a href="#talking">面试复述话术</a>
+        <a href="#improve">后续改进建议</a>
+      </nav>
+      <p class="side-note" style="margin-top: 18px;">
+        这份文档按“你自己做过项目”的口径来写，适合直接作为面试前复习材料。
+      </p>
+    </aside>
+
+    <main class="content">
+      <section class="hero">
+        <div class="eyebrow">项目解析文档 · 2026-06-01 版本</div>
+        <h2>企业局域网网络巡检与故障诊断工具</h2>
+        <p>
+          这是一个面向 <strong>IT 技术支持 / 网络支持 / 运维实习生</strong> 场景的网络巡检项目。
+          它不是单纯把 <code>ping</code> 和 <code>traceroute</code> 做成网页，而是把
+          <strong>ICMP 连通性、DNS 可用性、端口识别、路由探测、批量巡检、规则诊断、历史记录、报告导出</strong>
+          组合成一个结构化的小型巡检平台。
+        </p>
+        <div class="chips">
+          <div class="chip">
+            <strong>项目定位</strong>
+            <span>企业网络巡检 + 故障辅助诊断</span>
+          </div>
+          <div class="chip">
+            <strong>适用岗位</strong>
+            <span>IT 支持 / 网络支持 / 运维实习</span>
+          </div>
+          <div class="chip">
+            <strong>运行入口</strong>
+            <span><code>streamlit run app.py</code></span>
+          </div>
+          <div class="chip">
+            <strong>核心特征</strong>
+            <span>多信号判断，而不是只看 ping</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="background">
+        <h3>1. 项目背景</h3>
+        <div class="grid-2">
+          <div class="card">
+            <strong>为什么要做这个项目</strong>
+            <p>
+              IT 技术支持岗位的真实工作并不只是“修电脑”，还包括网络连通性排查、终端与服务访问问题定位、
+              资产对象批量巡检、故障记录沉淀和标准化输出。传统终端命令虽然能查数据，但难以形成可复用的巡检流程。
+            </p>
+          </div>
+          <div class="card">
+            <strong>这个项目解决什么痛点</strong>
+            <p>
+              把散落的命令和操作流程统一收进一个网页工具里，让巡检从“手工临时排查”变成
+              “带对象角色、带历史记录、带诊断结论、可导出报告”的半自动流程。
+            </p>
+          </div>
+        </div>
+        <div class="callout">
+          <p>
+            你可以把这个项目理解为：<strong>为企业办公网、服务器区、实验室或分支机构做的一套轻量级网络巡检与故障辅助诊断平台</strong>。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="what">
+        <h3>2. 项目是做什么的</h3>
+        <div class="grid-3">
+          <div class="metric">
+            <strong>单主机诊断</strong>
+            <span>对一个 IP 或域名执行 ICMP、DNS、Nmap 端口识别和路由追踪。</span>
+          </div>
+          <div class="metric">
+            <strong>批量巡检</strong>
+            <span>按企业对象模板批量扫描网关、交换机、打印机、NAS、Web 站点等。</span>
+          </div>
+          <div class="metric">
+            <strong>局域网扫描</strong>
+            <span>通过 ARP 探测当前二层网段在线设备，形成本地局域网资产感知。</span>
+          </div>
+        </div>
+        <h4>用户最终能得到什么</h4>
+        <ul>
+          <li>目标是否在线，不再只看 <code>ping</code>，而是综合多个信号判断。</li>
+          <li>DNS 是否可用、响应是否正常。</li>
+          <li>开放端口与服务识别结果。</li>
+          <li>是否能拿到路由路径信息。</li>
+          <li>自动生成的“诊断结论”和“建议动作”。</li>
+          <li>历史扫描记录，以及可下载的 Markdown / CSV 报告。</li>
+        </ul>
+      </section>
+
+      <section class="section" id="entry">
+        <h3>3. 核心入口是什么</h3>
+        <div class="grid-2">
+          <div class="card">
+            <strong>运行入口</strong>
+            <p>
+              项目主入口是根目录的 <code>app.py</code>。启动命令是：
+            </p>
+            <pre>streamlit run app.py</pre>
+          </div>
+          <div class="card">
+            <strong>入口职责</strong>
+            <p>
+              <code>app.py</code> 负责加载页面、初始化数据库、组织单主机诊断 / 批量巡检 / 局域网扫描 / 历史记录四个功能页，
+              同时承接报告下载和手动保存逻辑。
+            </p>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>入口文件</th>
+              <th>职责</th>
+              <th>你可以怎么解释</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>app.py</code></td>
+              <td>页面组织、表单输入、结果展示、数据库初始化、会话状态管理</td>
+              <td>“我把前端交互、扫描触发、结果展示和导出入口都统一放在这里。”</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section" id="architecture">
+        <h3>4. 整体架构</h3>
+        <div class="flow">
+          <div class="flow-step">
+            <div class="index">1</div>
+            <strong>Streamlit 表单输入</strong>
+            <p>输入目标地址、对象名称、对象角色、DNS 参数、扫描强度。</p>
+          </div>
+          <div class="flow-step">
+            <div class="index">2</div>
+            <strong>诊断服务编排</strong>
+            <p><code>services/diagnostic_service.py</code> 串联 ICMP、DNS、Nmap、traceroute。</p>
+          </div>
+          <div class="flow-step">
+            <div class="index">3</div>
+            <strong>规则引擎判断</strong>
+            <p><code>services/diagnosis_rules.py</code> 生成状态、结论、建议动作。</p>
+          </div>
+          <div class="flow-step">
+            <div class="index">4</div>
+            <strong>SQLite 持久化</strong>
+            <p><code>db/repo.py</code> 写入任务表、主机结果、端口结果、路由结果。</p>
+          </div>
+          <div class="flow-step">
+            <div class="index">5</div>
+            <strong>页面展示与报告输出</strong>
+            <p>展示图表、表格、历史记录，并在内存中生成 Markdown / CSV 报告。</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="modules">
+        <h3>5. 各个模块的作用是什么</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>模块 / 文件</th>
+              <th>作用</th>
+              <th>关键点</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>app.py</code></td>
+              <td>项目总入口、页面渲染、表单处理、报告下载与保存</td>
+              <td>四个标签页：单主机诊断、批量巡检、局域网扫描、历史记录</td>
+            </tr>
+            <tr>
+              <td><code>scanners/icmp_ping.py</code></td>
+              <td>用 Scapy 发 ICMP 探测包，统计时延和丢包率</td>
+              <td>给出 <code>sent / received / avg_ms / loss_rate</code></td>
+            </tr>
+            <tr>
+              <td><code>scanners/dns_check.py</code></td>
+              <td>用 Scapy 发 DNS 查询包，测试指定 DNS 服务器解析能力</td>
+              <td>适合区分“主机不回 ping”和“DNS 服务仍可用”这两种情况</td>
+            </tr>
+            <tr>
+              <td><code>scanners/nmap_scan.py</code></td>
+              <td>调用 Nmap 做端口扫描和服务识别</td>
+              <td>支持自动发现 Windows 常见安装路径，减少 PATH 问题</td>
+            </tr>
+            <tr>
+              <td><code>scanners/trace_route.py</code></td>
+              <td>调用 Nmap traceroute 获取跳数信息</td>
+              <td>用于辅助判断目标是否存在路径可达迹象</td>
+            </tr>
+            <tr>
+              <td><code>scanners/arp_scan.py</code></td>
+              <td>扫描当前二层局域网在线设备</td>
+              <td>适合办公网段、实验室网段的本地资产发现</td>
+            </tr>
+            <tr>
+              <td><code>services/diagnostic_service.py</code></td>
+              <td>扫描编排层</td>
+              <td>把多个 scanner 串起来，并做异常兜底</td>
+            </tr>
+            <tr>
+              <td><code>services/diagnosis_rules.py</code></td>
+              <td>规则引擎</td>
+              <td>把原始探测结果转成“在线 / 服务在线 / 路径可达 / 离线”</td>
+            </tr>
+            <tr>
+              <td><code>services/target_templates.py</code></td>
+              <td>批量巡检模板</td>
+              <td>内置办公网、服务器区、分支机构、实验室等企业场景</td>
+            </tr>
+            <tr>
+              <td><code>services/report_service.py</code></td>
+              <td>报告构建与保存策略</td>
+              <td>默认只在内存生成报告，手动保存时按日期分层并执行清理策略</td>
+            </tr>
+            <tr>
+              <td><code>db/schema.sql</code> + <code>db/repo.py</code></td>
+              <td>SQLite 存储层</td>
+              <td>把扫描记录沉淀成可查询的历史数据</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section" id="flow">
+        <h3>6. 一次扫描的完整链路</h3>
+        <ol>
+          <li>用户在网页中输入目标、DNS 服务器、测试域名、对象角色等参数。</li>
+          <li><code>app.py</code> 调用 <code>run_host_diagnostic()</code> 或 <code>run_batch_diagnostic()</code>。</li>
+          <li><code>diagnostic_service.py</code> 依次执行：
+            <ul>
+              <li><code>ping_stats()</code>：测试 ICMP 连通性</li>
+              <li><code>dns_check()</code>：测试 DNS 解析</li>
+              <li><code>scan_ports()</code>：测试开放端口和服务识别</li>
+              <li><code>trace_route()</code>：测试路径信息</li>
+            </ul>
+          </li>
+          <li><code>diagnosis_rules.py</code> 根据结果生成状态、结论、建议。</li>
+          <li><code>db/repo.py</code> 把扫描结果写入 SQLite。</li>
+          <li><code>report_service.py</code> 在内存中构造 Markdown / CSV 报告文本。</li>
+          <li>页面展示诊断结果，并允许用户下载或手动保存本地报告。</li>
+        </ol>
+        <pre>表单提交
+  -> run_host_diagnostic()
+     -> ping_stats()
+     -> dns_check()
+     -> scan_ports()
+     -> trace_route()
+     -> analyze_host_result()
+  -> save_host_scan()
+  -> build_host_report_bundle()
+  -> 页面展示 + 下载 / 手动保存</pre>
+      </section>
+
+      <section class="section" id="rules">
+        <h3>7. 多信号判定与诊断结果是怎么实现的</h3>
+        <p>
+          这里不是机器学习，也不是复杂 AI，而是一个<strong>规则引擎</strong>。规则引擎更适合这个项目，因为网络诊断要求可解释、可复现、便于面试说明。
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>状态</th>
+              <th>判定逻辑</th>
+              <th>解释</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>在线</td>
+              <td>ICMP 有回包</td>
+              <td>说明主机在网络层直接响应探测</td>
+            </tr>
+            <tr>
+              <td>服务在线</td>
+              <td>ICMP 不通，但端口开放或 DNS 服务成功</td>
+              <td>适合识别“禁 ping 但业务还活着”的目标</td>
+            </tr>
+            <tr>
+              <td>路径可达</td>
+              <td>ICMP 不通、端口没有明显结果，但 traceroute 有路径</td>
+              <td>说明路径上仍有到达迹象</td>
+            </tr>
+            <tr>
+              <td>离线</td>
+              <td>ICMP、端口、DNS、路径都没有提供可达证据</td>
+              <td>更接近真正不可达或被策略阻断</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="callout">
+          <p>
+            这部分是项目最有“工程价值”的地方。它把终端命令结果提升成了 <strong>结构化诊断</strong>，这也是你和“只会敲 ping 命令”的区别。
+          </p>
+        </div>
+        <h4>为什么要这么设计</h4>
+        <ul>
+          <li>很多公网 DNS、云服务、边界设备会禁用 ICMP。</li>
+          <li>如果只看 ping，会把“服务可达”的目标误判为离线。</li>
+          <li>多信号判定能更接近企业真实故障排查逻辑。</li>
+        </ul>
+      </section>
+
+      <section class="section" id="batch">
+        <h3>8. 批量巡检与企业场景模板</h3>
+        <p>
+          批量巡检模块的目标不是“多扫几个 IP”，而是模拟企业里真正会被巡检的一类对象：网关、交换机、打印机、NAS、Web 站点、数据库应用服务器等。
+        </p>
+        <h4>模板格式</h4>
+        <pre>对象名称,目标,对象角色,DNS服务器,DNS测试域名</pre>
+        <h4>当前内置模板</h4>
+        <div class="grid-2">
+          <div class="card">
+            <strong>公共服务演示</strong>
+            <p>适合第一次演示项目，让页面快速出现结果。</p>
+          </div>
+          <div class="card">
+            <strong>总部办公网络巡检</strong>
+            <p>适合讲桌面运维、办公网络、会议终端和共享服务。</p>
+          </div>
+          <div class="card">
+            <strong>服务器区巡检</strong>
+            <p>适合讲 DMZ、Web、应用服务器、数据库和备份存储。</p>
+          </div>
+          <div class="card">
+            <strong>分支机构网络巡检</strong>
+            <p>适合讲多办公点/门店/校区巡检场景。</p>
+          </div>
+          <div class="card">
+            <strong>校园实验室网络巡检</strong>
+            <p>适合学生项目展示，兼顾实验室终端、打印机和 NAS。</p>
+          </div>
+        </div>
+        <div class="callout warn">
+          <p>
+            这些模板里的私网地址主要用于<strong>展示企业场景设计能力</strong>，实际演示时要换成你自己的实验环境地址，否则很多目标会不可达。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="report">
+        <h3>9. 报告与存储策略</h3>
+        <div class="grid-2">
+          <div class="card">
+            <strong>SQLite 持久化</strong>
+            <p>
+              每次扫描默认会写入 SQLite 数据库 <code>data/network_inspector/inspector.db</code>，这样历史记录能够长期保留并在页面里回看。
+            </p>
+          </div>
+          <div class="card">
+            <strong>报告导出策略</strong>
+            <p>
+              报告默认只在内存中生成，不自动写入 <code>reports/</code>。只有用户点击“保存 Markdown + CSV 到本地报告目录”时才真正落盘。
+            </p>
+          </div>
+        </div>
+        <h4>为什么这样改</h4>
+        <ul>
+          <li>避免每次测试都在 <code>reports/</code> 里生成大量重复文件。</li>
+          <li>把“历史记录”和“归档报告”两种诉求分开处理。</li>
+          <li>更贴近企业系统的“数据库为主，文件归档为辅”思路。</li>
+        </ul>
+        <h4>当前保存策略</h4>
+        <ul>
+          <li>按日期分层保存到 <code>reports/YYYY-MM-DD/</code></li>
+          <li>默认保留最近 <strong>30 天</strong></li>
+          <li>默认最多保留最近 <strong>100 份报告组</strong></li>
+        </ul>
+        <div class="callout">
+          <p>
+            这一点在面试里很好讲：你不仅做了扫描，还考虑了<strong>数据沉淀策略、报告生命周期和目录膨胀问题</strong>。
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="stack">
+        <h3>10. 项目技术栈</h3>
+        <div>
+          <span class="badge">Python</span>
+          <span class="badge">Streamlit</span>
+          <span class="badge">Scapy</span>
+          <span class="badge">Nmap</span>
+          <span class="badge">SQLite</span>
+          <span class="badge">Pandas</span>
+          <span class="badge">Npcap</span>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>技术</th>
+              <th>用途</th>
+              <th>为什么选它</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Python</td>
+              <td>整个项目的主语言</td>
+              <td>适合快速整合网络探测、数据处理和页面逻辑</td>
+            </tr>
+            <tr>
+              <td>Streamlit</td>
+              <td>Web 页面</td>
+              <td>开发快，适合做内部工具和项目展示</td>
+            </tr>
+            <tr>
+              <td>Scapy</td>
+              <td>ICMP、DNS、ARP 探测</td>
+              <td>能直接操作网络包，体现对协议层的理解</td>
+            </tr>
+            <tr>
+              <td>Nmap</td>
+              <td>端口扫描、服务识别、路由追踪</td>
+              <td>成熟稳定，结果结构化程度高</td>
+            </tr>
+            <tr>
+              <td>SQLite</td>
+              <td>历史记录持久化</td>
+              <td>无需额外部署数据库，适合本地项目和演示</td>
+            </tr>
+            <tr>
+              <td>Pandas</td>
+              <td>表格展示和数据中转</td>
+              <td>配合 Streamlit 展示扫描结果很方便</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="section" id="talking">
+        <h3>11. 如果你要把它讲得像自己做的，可以怎么说</h3>
+        <h4>一句话版本</h4>
+        <div class="callout">
+          <p>
+            我做了一个基于 Python、Scapy、Nmap、Streamlit 和 SQLite 的企业网络巡检与故障辅助诊断工具，
+            可以对单主机、批量企业对象和局域网设备做诊断，并且通过多信号规则判断目标是真离线、服务在线还是路径可达。
+          </p>
+        </div>
+
+        <h4>面试时建议按这 5 个点讲</h4>
+        <ol>
+          <li><strong>为什么做：</strong>IT 支持岗位不仅需要会敲命令，还需要把排障过程标准化、可视化、可复盘。</li>
+          <li><strong>做了什么：</strong>把 ping、DNS 测试、端口识别、路由追踪、ARP 扫描、批量巡检、历史记录和报告导出整合成一个 Web 工具。</li>
+          <li><strong>技术亮点：</strong>不是只看 ICMP，而是设计了多信号诊断规则，避免把“禁 ping 但服务可达”的目标误判成离线。</li>
+          <li><strong>工程化点：</strong>引入 SQLite 存储、企业场景模板、批量巡检、报告生命周期管理。</li>
+          <li><strong>后续还能做什么：</strong>接 SNMP、定时巡检、异常告警、资产台账联动。</li>
+        </ol>
+
+        <h4>可以主动强调的技术决策</h4>
+        <ul>
+          <li>选择 Streamlit 是为了快速做出可用页面，把重点放在诊断逻辑而不是前端框架搭建。</li>
+          <li>选择规则引擎而不是机器学习，是因为网络诊断要求强解释性和可复现性。</li>
+          <li>默认只入库、不自动落盘，是为了避免报告目录膨胀，提升长期可维护性。</li>
+        </ul>
+      </section>
+
+      <section class="section" id="improve">
+        <h3>12. 后续更改建议</h3>
+        <div class="grid-2">
+          <div class="card">
+            <strong>优先级高：接入 SNMP</strong>
+            <p>
+              把交换机、AP、打印机、NAS 的接口流量、CPU、内存、在线状态纳入巡检。这样项目会更贴近网络支持岗位。
+            </p>
+          </div>
+          <div class="card">
+            <strong>优先级高：定时巡检与趋势图</strong>
+            <p>
+              增加定时任务，把每天的时延、丢包率、端口变化做成趋势图，而不是只看某一次结果。
+            </p>
+          </div>
+          <div class="card">
+            <strong>优先级中：对象信息入库更完整</strong>
+            <p>
+              目前 SQLite 里还没有完整保存 <code>object_label</code>、<code>object_role</code> 等企业语义字段，这会影响历史记录回放的完整性。
+            </p>
+          </div>
+          <div class="card">
+            <strong>优先级中：异常告警联动</strong>
+            <p>
+              可以接企业微信机器人、邮件或工单系统，遇到异常目标时自动推送或生成工单。
+            </p>
+          </div>
+          <div class="card">
+            <strong>优先级中：预期端口 / 角色规则</strong>
+            <p>
+              给不同角色定义预期端口和基线规则，例如打印机应暴露 80/9100，DNS 服务器应暴露 53。
+            </p>
+          </div>
+          <div class="card">
+            <strong>优先级低：前端交互增强</strong>
+            <p>
+              例如网络拓扑视图、异常热力图、保存的报告管理页，让页面更像一个完整平台。
+            </p>
+          </div>
+        </div>
+
+        <div class="callout danger">
+          <p>
+            当前项目最值得你记住的两个“已知限制”是：
+            <strong>历史记录回放时对象角色信息还原不完整</strong>，
+            以及 <strong>ICMP / traceroute 的结果受目标策略和本机权限影响较大</strong>。
+            这两个限制不影响项目价值，反而是你可以主动说明自己理解边界的地方。
+          </p>
+        </div>
+      </section>
+
+      <section class="section footer">
+        <h3>13. 你可以怎么使用这份文档</h3>
+        <ul>
+          <li>面试前先按目录快速浏览一遍，重点记“项目背景、规则引擎、批量巡检、报告策略”。</li>
+          <li>如果被问“这是不是只是命令可视化”，重点回答第 7、9、11 节。</li>
+          <li>如果被问“你真正做了什么”，重点回答第 5、6、11 节。</li>
+          <li>如果被问“接下来还能怎么优化”，重点回答第 12 节。</li>
+        </ul>
+        <p>
+          文档文件：<code>docs/network-inspector-project-guide.html</code>
+        </p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
